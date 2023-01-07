@@ -1,8 +1,8 @@
 {
-  "name": "ciscryp",
+  "name": "lyragit",
   "version": "0.2.1",
-  "homepage": "https://chisnghiax.com/ciscryp",
-  "private": true,
+  "homepage": "https://lyragit.com",
+  "private": false,
   "dependencies": {
     "@glidejs/glide": "^3.5.2",
     "@headlessui/react": "^1.6.6",
