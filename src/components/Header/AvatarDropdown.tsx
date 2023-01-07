@@ -1,10 +1,71 @@
+import React, { useState, useEffect } from "react";
+import ButtonPrimary from "shared/Button/ButtonPrimary";  
 import { Popover, Transition } from "@headlessui/react";
 import { avatarImgs } from "contains/fakeData";
+import GitHub_Cat from "images/github.jpg";
 import { Fragment } from "react";
 import { Link } from "react-router-dom";
 import Avatar from "shared/Avatar/Avatar";
+import { useCookies } from 'react-cookie';
+import { loginUsingOauthGithub } from "hooks/useLyra.ts";
+import { getUserFromSessionId } from "hooks/useLyra.ts";
+import { loginUsingOauthGithub } from "hooks/useLyra.ts";
 
 export default function AvatarDropdown() {
+
+  const [user, setUser] = useState(null);
+  const [sid, setSid] = useState(null);
+  const [cookies, setCookie] = useCookies(['access_token', 'session_id']);
+
+
+  useEffect(() => {
+    if(user === null) {
+      loadUser();
+    }
+
+  }, [user]);
+
+  async function loadUser(){
+     const access_token = cookies.access_token;
+      if(access_token) {
+        getUserFromToken(access_token).then((res) => {
+          if(res) {
+            if(res["status"] === "success") {
+              setUser(res["user"]);
+              // console.log("User logged in", res["user"]);
+            }
+          }
+        });
+      }
+  }
+
+  async function signIn(){
+   const url = await loginUsingOauthGithub();
+  
+   if(url) {
+    setSid(url["sid"]);
+
+    window.open(url["url"], "_blank");
+    
+    setInterval(function(){ 
+
+      if(user !== null) {
+        return;
+      }
+      // Checks if the user is logged in
+      getUserFromSessionId(url["sid"]).then((res) => {
+        if(res) { 
+          if(res["status"] === "success") {
+            setUser(res["user"]);
+            setCookie('access_token', res["access_token"], { path: '/' });
+          }
+        }
+        console.log(res);
+      });
+    }, 5000);
+   }
+  }
+
   return (
     <div className="AvatarDropdown">
       <Popover className="relative">
@@ -31,12 +92,30 @@ export default function AvatarDropdown() {
                 <div className="overflow-hidden rounded-3xl shadow-lg ring-1 ring-black ring-opacity-5">
                   <div className="relative grid grid-cols-1 gap-6 bg-white dark:bg-neutral-800 py-7 px-6">
                     <div className="flex items-center space-x-3">
-                      <Avatar imgUrl={avatarImgs[7]} sizeClass="w-12 h-12" />
 
-                      <div className="flex-grow">
-                        <h4 className="font-semibold">Eden Tuan</h4>
-                        <p className="text-xs mt-0.5">0xc4c16ab5ac7d...b21a</p>
-                      </div>
+                      {(user === null)? 
+                        <>
+                          <Avatar imgUrl={GitHub_Cat} sizeClass="w-12 h-12" />
+
+                          <div className="flex-grow">
+                                <ButtonPrimary
+                                    onClick={signIn}
+                                    sizeClass="px-4 py-2 sm:px-5">
+                                  Sign in
+                                </ButtonPrimary>
+                          </div>
+                        </>:
+                        <>
+                          <Avatar imgUrl={user["metadata"]["avatar_url"]} sizeClass="w-12 h-12" />
+
+                          <div className="flex-grow">
+                                <>
+                                  <h4 className="font-semibold">@{ user["name"] }</h4>
+                                  <p className="text-xs mt-0.5"><Link to="/page-wallet">0xc4c16ab5ac7d...b21a</Link></p>
+                                </>
+                          </div>
+                        </>
+                      }
                     </div>
 
                     <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
